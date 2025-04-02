@@ -15,11 +15,11 @@ from langchain_community.embeddings import OpenAIEmbeddings
 from urllib.parse import urlencode
 
 # API keys and configurations
-PINECONE_API_KEY = "pcsk_6PUKb9_xKZ7sAuAahyMW5ZWWKB2f2929rVuRCfV6aMvugo38quhF8c4w4nZaZfQUzpfsH"
-OPENAI_API_KEY = "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"
-SCRAPER_API_KEY = "7ebad43756ae1fe389f8fbd957716985"  # ScraperAPI Key
-PINECONE_INDEX = "pydantic1"
-PINECONE_ENVIRONMENT = "us-west1"
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+PINECONE_INDEX = os.getenv("PINECONE_INDEX")
+PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
+SCRAPER_API_KEY = os.getenv("SCRAPER_API_KEY")
 
 # OpenAI API Client
 openai_client = openai.AsyncOpenAI(api_key=OPENAI_API_KEY)

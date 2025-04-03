@@ -15,12 +15,11 @@ from langchain_community.embeddings import OpenAIEmbeddings
 from urllib.parse import urlencode
 
 # API keys and configurations
-PINECONE_API_KEY = "pcsk_6PUKb9_xKZ7sAuAahyMW5ZWWKB2f2929rVuRCfV6aMvugo38quhF8c4w4nZaZfQUzpfsH"
-OPENAI_API_KEY = "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"
-SCRAPER_API_KEY = "7ebad43756ae1fe389f8fbd957716985"  # ScraperAPI Key
-PINECONE_INDEX = "pydantic1"
-PINECONE_ENVIRONMENT = "us-west1"
-
+PINECONE_API_KEY = "pcsk_6PUKb9_xKZ7sAuAahyMW5ZWWKB2f2929rVuRCfV6aMvugo38quhF8c4w4nZaZfQUzpfsH" # Replace with your actual Pinecone API key
+OPENAI_API_KEY = "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"      # Replace with your actual OpenAI API key
+PINECONE_INDEX = "pydantic1"          # Replace with your Pinecone index name
+PINECONE_ENVIRONMENT = "us-west1"                # Replace with your Pinecone environment (e.g., "us-west1")
+SCRAPER_API_KEY = "7ebad43756ae1fe389f8fbd957716985" # Replace with your actual ScraperAPI key
 # OpenAI API Client
 openai_client = openai.AsyncOpenAI(api_key=OPENAI_API_KEY)
 
@@ -90,15 +89,21 @@ async def crawl_and_store(url: str, depth: int):
 
         for result in results:
             cleaned_text = fetch_and_clean_url(result.url)  # Fetch content via ScraperAPI
+            #print(f"\nCleaned HTML for {result.url}:\n")
+            #print(cleaned_text)
             metadata = {"url": result.url}
 
             chunks = chunk_text(cleaned_text)
+            
             for chunk in chunks:
                 vector_store.add_texts([chunk], metadatas=[metadata])
 
         print(f"Stored {len(results)} pages in Pinecone vector database.")
 
+chat_memory = [] 
+
 async def query_rag(question: str):
+    ''''
     """Retrieves relevant documents from Pinecone and generates an answer using OpenAI."""
     results = vector_store.similarity_search(question, k=3)
 
@@ -123,6 +128,43 @@ async def query_rag(question: str):
     )
 
     return response.choices[0].message.content, unique_sources
+'''
+  # Global variable to store conversation history
+    """Retrieves relevant documents from Pinecone and generates an answer using OpenAI."""
+    results = vector_store.similarity_search(question, k=3)
+
+    if not results:
+        return "No relevant documents found.", None
+
+    combined_summary = "\n\n".join([doc.page_content for doc in results])
+    unique_sources = list(set(doc.metadata.get("url", "Unknown source") for doc in results))
+
+    # Format conversation history (last 5 exchanges)
+    chat_history = "\n".join([f"User: {q}\nAI: {a}" for q, a in chat_memory[-5:]])
+
+    prompt = f"""
+    You are an AI assistant. Answer the following question based on the retrieved summaries.
+    
+    Conversation history:
+    {chat_history}
+    
+    Context:
+    {combined_summary}
+    
+    Question: {question}
+    """
+
+    response = await openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    answer = response.choices[0].message.content
+
+    # Store the conversation in memory
+    chat_memory.append((question, answer))
+
+    return answer, unique_sources
 
 async def chat_system():
     """Handles user input and queries."""

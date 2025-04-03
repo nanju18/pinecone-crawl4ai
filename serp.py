@@ -15,11 +15,12 @@ from langchain_community.embeddings import OpenAIEmbeddings
 from urllib.parse import urlencode
 
 # API keys and configurations
-PINECONE_API_KEY = "pcsk_6PUKb9_xKZ7sAuAahyMW5ZWWKB2f2929rVuRCfV6aMvugo38quhF8c4w4nZaZfQUzpfsH" # Replace with your actual Pinecone API key
-OPENAI_API_KEY = "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"      # Replace with your actual OpenAI API key
-PINECONE_INDEX = "pydantic1"          # Replace with your Pinecone index name
-PINECONE_ENVIRONMENT = "us-west1"                # Replace with your Pinecone environment (e.g., "us-west1")
-SCRAPER_API_KEY = "7ebad43756ae1fe389f8fbd957716985" # Replace with your actual ScraperAPI key
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+PINECONE_INDEX = os.getenv("PINECONE_INDEX")
+PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
+SCRAPER_API_KEY = os.getenv("SCRAPER_API_KEY")
+
 # OpenAI API Client
 openai_client = openai.AsyncOpenAI(api_key=OPENAI_API_KEY)
 
@@ -103,32 +104,6 @@ async def crawl_and_store(url: str, depth: int):
 chat_memory = [] 
 
 async def query_rag(question: str):
-    ''''
-    """Retrieves relevant documents from Pinecone and generates an answer using OpenAI."""
-    results = vector_store.similarity_search(question, k=3)
-
-    if not results:
-        return "No relevant documents found.", None
-
-    combined_summary = "\n\n".join([doc.page_content for doc in results])
-    unique_sources = list(set(doc.metadata.get("url", "Unknown source") for doc in results))
-
-    prompt = f"""
-    You are an AI assistant. Answer the following question based on the retrieved summaries.
-    
-    Context:
-    {combined_summary}
-    
-    Question: {question}
-    """
-
-    response = await openai_client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    return response.choices[0].message.content, unique_sources
-'''
   # Global variable to store conversation history
     """Retrieves relevant documents from Pinecone and generates an answer using OpenAI."""
     results = vector_store.similarity_search(question, k=3)

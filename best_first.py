@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode
 from crawl4ai.deep_crawling.scorers import KeywordRelevanceScorer
 from crawl4ai.content_scraping_strategy import LXMLWebScrapingStrategy
@@ -9,8 +8,6 @@ from playwright.async_api import async_playwright
 from app.utils.log_manager import LoggerUtility
 
 logger = LoggerUtility().get_logger()
-
-load_dotenv()
 
 class BestFirstCrawl:
 

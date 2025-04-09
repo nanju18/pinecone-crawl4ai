@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode
 from crawl4ai.deep_crawling.scorers import KeywordRelevanceScorer
 from crawl4ai.content_scraping_strategy import LXMLWebScrapingStrategy
@@ -8,6 +9,8 @@ from playwright.async_api import async_playwright
 from app.utils.log_manager import LoggerUtility
 
 logger = LoggerUtility().get_logger()
+
+load_dotenv()
 
 class BestFirstCrawl:
 
@@ -57,6 +60,18 @@ class BestFirstCrawl:
             excluded_tags=["nav", "footer", "header", "script", "style", "aside"],
             only_text=True,
             exclude_external_links=True,
+            scraping_strategy=LXMLWebScrapingStrategy(),
+            cache_mode=CacheMode.BYPASS,
+            magic=True,
+            verbose=True,
+            override_navigator=True,
+            scan_full_page=True,
+            wait_for_images=True,
+            simulate_user=True,
+            adjust_viewport_to_content=True,
+            remove_overlay_elements=True,
+            user_agent=self.user_agent,
+            user_agent_mode="random"
         )
 
         async with AsyncWebCrawler() as crawler:
@@ -93,6 +108,9 @@ class BestFirstCrawl:
                     url_scorer=keyword_scorer,
                 ),
                 markdown_generator=md_generator,
+                excluded_tags=["nav", "footer", "header", "script", "style", "aside"],
+                only_text=True,
+                exclude_external_links=True,
                 scraping_strategy=LXMLWebScrapingStrategy(),
                 cache_mode=CacheMode.BYPASS,
                 magic=True,

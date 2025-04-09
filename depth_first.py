@@ -6,8 +6,10 @@ from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
 from playwright.async_api import async_playwright
 from app.utils.log_manager import LoggerUtility
+from dotenv import load_dotenv
 
 logger = LoggerUtility().get_logger()
+load_dotenv()
 
 class DepthFirstCrawl:
     def __init__(self):
@@ -55,6 +57,18 @@ class DepthFirstCrawl:
             excluded_tags=["nav", "footer", "header", "script", "style", "aside"],
             only_text=True,
             exclude_external_links=True,
+            scraping_strategy=LXMLWebScrapingStrategy(),
+            cache_mode=CacheMode.BYPASS,
+            magic=True,
+            verbose=True,
+            override_navigator=True,
+            scan_full_page=True,
+            wait_for_images=True,
+            simulate_user=True,
+            adjust_viewport_to_content=True,
+            remove_overlay_elements=True,
+            user_agent=self.user_agent,
+            user_agent_mode="random"
         )
 
         async with AsyncWebCrawler() as crawler:
@@ -91,6 +105,9 @@ class DepthFirstCrawl:
                     url_scorer=keyword_scorer,
                 ),
                 markdown_generator=md_generator,
+                excluded_tags=["nav", "footer", "header", "script", "style", "aside"],
+                only_text=True,
+                exclude_external_links=True,
                 scraping_strategy=LXMLWebScrapingStrategy(),
                 cache_mode=CacheMode.BYPASS,
                 magic=True,

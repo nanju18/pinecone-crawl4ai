@@ -16,7 +16,10 @@ class BestFirstCrawl:
 
     def __init__(self, keywords=None):
         self.keywords = keywords or ["crawl", "example", "async", "configuration"]
-        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+        self.user_agent = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+        )
 
     async def fetch_rendered_html(self, url: str) -> str:
         try:
@@ -42,37 +45,40 @@ class BestFirstCrawl:
             logger.exception(f"Unexpected error while rendering {url}")
             raise
 
-    async def crawl_single_page(self, url: str):
-        rendered_html = await self.fetch_rendered_html(url)
-
-        # Pruning filter and custom markdown generator
+    def get_markdown_generator(self) -> DefaultMarkdownGenerator:
         prune_filter = PruningContentFilter(
             threshold=0.7,
             threshold_type="dynamic",
         )
-        md_generator = DefaultMarkdownGenerator(
+        return DefaultMarkdownGenerator(
             content_filter=prune_filter,
             options={"ignore_links": True, "skip_internal_links": True}
         )
 
-        config = CrawlerRunConfig(
-            markdown_generator=md_generator,
-            excluded_tags=["nav", "footer", "header", "script", "style", "aside"],
-            only_text=True,
-            exclude_external_links=True,
-            scraping_strategy=LXMLWebScrapingStrategy(),
-            cache_mode=CacheMode.BYPASS,
-            magic=True,
-            verbose=True,
-            override_navigator=True,
-            scan_full_page=True,
-            wait_for_images=True,
-            simulate_user=True,
-            adjust_viewport_to_content=True,
-            remove_overlay_elements=True,
-            user_agent=self.user_agent,
-            user_agent_mode="random"
-        )
+    def build_common_config(self, markdown_generator) -> dict:
+        return {
+            "markdown_generator": markdown_generator,
+            "excluded_tags": ["nav", "footer", "header", "script", "style", "aside"],
+            "only_text": True,
+            "exclude_external_links": True,
+            "scraping_strategy": LXMLWebScrapingStrategy(),
+            "cache_mode": CacheMode.BYPASS,
+            "magic": True,
+            "verbose": True,
+            "override_navigator": True,
+            "scan_full_page": True,
+            "wait_for_images": True,
+            "simulate_user": True,
+            "adjust_viewport_to_content": True,
+            "remove_overlay_elements": True,
+            "user_agent": self.user_agent,
+            "user_agent_mode": "random"
+        }
+
+    async def crawl_single_page(self, url: str):
+        rendered_html = await self.fetch_rendered_html(url)
+        md_generator = self.get_markdown_generator()
+        config = CrawlerRunConfig(**self.build_common_config(md_generator))
 
         async with AsyncWebCrawler() as crawler:
             results = await crawler.arun(url, config=config, initial_html=rendered_html)
@@ -90,40 +96,15 @@ class BestFirstCrawl:
                 keywords=self.keywords,
                 weight=0.7
             )
-            # Custom Markdown Generator with PruningContentFilter
-            prune_filter = PruningContentFilter(
-                threshold=0.7,
-                threshold_type="dynamic"
+            md_generator = self.get_markdown_generator()
+            config_dict = self.build_common_config(md_generator)
+            config_dict["deep_crawl_strategy"] = BestFirstCrawlingStrategy(
+                max_depth=depth,
+                include_external=False,
+                max_pages=max_pages,
+                url_scorer=keyword_scorer,
             )
-            md_generator = DefaultMarkdownGenerator(
-                content_filter=prune_filter,
-                options={"ignore_links": True, "skip_internal_links": True}
-            )
-
-            config = CrawlerRunConfig(
-                deep_crawl_strategy=BestFirstCrawlingStrategy(
-                    max_depth=depth,
-                    include_external=False,
-                    max_pages=max_pages,
-                    url_scorer=keyword_scorer,
-                ),
-                markdown_generator=md_generator,
-                excluded_tags=["nav", "footer", "header", "script", "style", "aside"],
-                only_text=True,
-                exclude_external_links=True,
-                scraping_strategy=LXMLWebScrapingStrategy(),
-                cache_mode=CacheMode.BYPASS,
-                magic=True,
-                verbose=True,
-                override_navigator=True,
-                scan_full_page=True,
-                wait_for_images=True,
-                simulate_user=True,
-                adjust_viewport_to_content=True,
-                remove_overlay_elements=True,
-                user_agent=self.user_agent,
-                user_agent_mode="random"
-            )
+            config = CrawlerRunConfig(**config_dict)
 
             async with AsyncWebCrawler() as crawler:
                 results = await crawler.arun(url=url, config=config, initial_html=rendered_html)
@@ -136,5 +117,3 @@ class BestFirstCrawl:
         except Exception as e:
             logger.exception(f"Error during best first crawl of {url}")
             raise RuntimeError(f"Crawling failed for {url}") from e
-
-

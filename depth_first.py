@@ -1,7 +1,7 @@
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode
 from crawl4ai.deep_crawling.scorers import KeywordRelevanceScorer
 from crawl4ai.content_scraping_strategy import LXMLWebScrapingStrategy
-from crawl4ai.deep_crawling import BestFirstCrawlingStrategy
+from crawl4ai.deep_crawling import DFSDeepCrawlStrategy
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
 from playwright.async_api import async_playwright
@@ -10,8 +10,7 @@ from app.utils.log_manager import LoggerUtility
 logger = LoggerUtility().get_logger()
 
 class DepthFirstCrawl:
-    def __init__(self, keywords=None):
-        self.keywords = keywords or ["crawl", "example", "depth", "async"]
+    def __init__(self):
         self.user_agent = (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -86,23 +85,18 @@ class DepthFirstCrawl:
                 "fit_markdown": results.markdown.fit_markdown
             }]
 
-    async def best_first_crawl(self, url: str, depth: int):
+    async def depth_first_crawl(self, url: str, depth: int):
         try:
             max_pages = {1: 5, 2: 200}.get(depth, 500)
             rendered_html = await self.fetch_rendered_html(url)
 
-            keyword_scorer = KeywordRelevanceScorer(
-                keywords=self.keywords,
-                weight=0.7
-            )
             md_generator = self.create_markdown_generator()
 
             config = CrawlerRunConfig(
-                deep_crawl_strategy=BestFirstCrawlingStrategy(
+                deep_crawl_strategy=DFSDeepCrawlStrategy(
                     max_depth=depth,
                     include_external=False,
                     max_pages=max_pages,
-                    url_scorer=keyword_scorer,
                 ),
                 **self.create_common_config(md_generator)
             )

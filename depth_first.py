@@ -10,7 +10,7 @@ from app.utils.log_manager import LoggerUtility
 logger = LoggerUtility().get_logger()
 
 class DepthFirstCrawl:
-    def __init__(self):
+    def __init__(self,keywords:None):
         self.keywords = keywords or ["crawl", "example", "async", "configuration"]
         self.user_agent = (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

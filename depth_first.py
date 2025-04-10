@@ -11,6 +11,7 @@ logger = LoggerUtility().get_logger()
 
 class DepthFirstCrawl:
     def __init__(self):
+        self.keywords = keywords or ["crawl", "example", "async", "configuration"]
         self.user_agent = (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -89,6 +90,10 @@ class DepthFirstCrawl:
         try:
             max_pages = {1: 5, 2: 200}.get(depth, 500)
             rendered_html = await self.fetch_rendered_html(url)
+            keyword_scorer = KeywordRelevanceScorer(
+                keywords=self.keywords,
+                weight=0.7
+            )
 
             md_generator = self.create_markdown_generator()
 
@@ -97,6 +102,7 @@ class DepthFirstCrawl:
                     max_depth=depth,
                     include_external=False,
                     max_pages=max_pages,
+                    score_threshold=0.7
                 ),
                 **self.create_common_config(md_generator)
             )
